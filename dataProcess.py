@@ -6,7 +6,7 @@ import numpy as np
 from collections import OrderedDict
 import re
 from sklearn.utils import shuffle
-def HDFS(HDFSfilePath='D:/data/test_result/struct_log.csv',trainRatio=0.5,labelFile=None):                                              #对处理HDFS日志数据生成的结构化日志进行处理，使用session窗口
+def HDFS(HDFSfilePath,trainRatio=0.5,labelFile=None):                                              #对处理HDFS日志数据生成的结构化日志进行处理，使用session窗口
     log=pd.read_csv(HDFSfilePath, engine='c',na_filter=False,memory_map=True)
     blk_dict=OrderedDict()                                                                                                              #使用有序字典来存储blkId以及其对应的事件
     for line,row in log.iterrows():
@@ -23,7 +23,7 @@ def HDFS(HDFSfilePath='D:/data/test_result/struct_log.csv',trainRatio=0.5,labelF
         label_dict = label_data['Label'].to_dict()
         data_df['Label'] = data_df['BlockId'].apply(lambda x: 1 if label_dict[x] == 'Anomaly' else 0)
 
-
+        print(data_df['Label'].values)
         (x_train, y_train), (x_test, y_test) = splitData(data_df['EventSequence'].values,
                                                            data_df['Label'].values, trainRatio, split_type='uniform')
     num_train = x_train.shape[0]
@@ -43,9 +43,10 @@ def HDFS(HDFSfilePath='D:/data/test_result/struct_log.csv',trainRatio=0.5,labelF
     return (x_train, y_train), (x_test, y_test)
 
 
-def splitData(x_data, y_data=None, trainRatio=0, split_type='uniform'):                                                                             #将数据分为测试集和训练集
+def splitData(x_data, y_data=None, trainRatio=0, split_type='uniform'):                                                                            #将数据分为测试集和训练集
     if split_type == 'uniform' and y_data is not None:
         pos_idx = y_data > 0
+        print(pos_idx)
         x_pos = x_data[pos_idx]
         y_pos = y_data[pos_idx]
         x_neg = x_data[~pos_idx]
@@ -62,6 +63,7 @@ def splitData(x_data, y_data=None, trainRatio=0, split_type='uniform'):         
     x_train = x_train[indexes]
     if y_train is not None:
         y_train = y_train[indexes]
+    print(x_train,y_train,x_test,y_test)
     return (x_train, y_train), (x_test, y_test)
-HDFS(labelFile='D:\data\HDFS\\anomaly_label.csv')
+
 
