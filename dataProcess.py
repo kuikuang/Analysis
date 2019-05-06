@@ -24,7 +24,7 @@ def HDFS(HDFSfilePath,trainRatio=0.5,labelFile=None):                           
         data_df['Label'] = data_df['BlockId'].apply(lambda x: 1 if label_dict[x] == 'Anomaly' else 0)
 
         print(data_df['Label'].values)
-        (x_train, y_train), (x_test, y_test) = splitData(data_df['EventSequence'].values,
+        (x_train, y_train), (x_test, y_test),(blk_id_train,blk_id_test) = splitData(data_df['BlockId'].values,data_df['EventSequence'].values,
                                                            data_df['Label'].values, trainRatio, split_type='uniform')
     num_train = x_train.shape[0]
     num_test = x_test.shape[0]
@@ -40,10 +40,12 @@ def HDFS(HDFSfilePath,trainRatio=0.5,labelFile=None):                           
     print('Test: {} instances, {} anomaly, {} normal\n' \
               .format(num_test, num_test_pos, num_test - num_test_pos))
 
-    return (x_train, y_train), (x_test, y_test)
+    return (x_train, y_train), (x_test, y_test),(blk_id_train,blk_id_test)
 
 
-def splitData(x_data, y_data=None, trainRatio=0, split_type='uniform'):                                                                            #将数据分为测试集和训练集
+def splitData(blk_id,x_data, y_data=None, trainRatio=0, split_type='uniform'):                                                                            #将数据分为测试集和训练集
+    for i,j in zip(x_data,blk_id):
+        i.append(j)
     if split_type == 'uniform' and y_data is not None:
         pos_idx = y_data > 0
         print(pos_idx)
@@ -63,7 +65,28 @@ def splitData(x_data, y_data=None, trainRatio=0, split_type='uniform'):         
     x_train = x_train[indexes]
     if y_train is not None:
         y_train = y_train[indexes]
-    print(x_train,y_train,x_test,y_test)
-    return (x_train, y_train), (x_test, y_test)
+    '''
+    为了达到最终既能检测出异常又可以输出异常blk_id 的目的，我们需要将blk_id和event sequence对应起来，
+    因为上一步有一个shuffle步骤，所以我们需要获得打乱顺序之后blk_id与event sequence的对应关系，所以在上一步shuffle中我们把
+    blk_id放在event sequence的最后，这样我们就可以使得evente sequnce和blk_id的顺序在经过shuffle之后依然对应，接下来我们将blk_id
+    提取出来。之所以要提取出来，是因为如果继续将blk_id放在event sequence最后可能会影响后面的data preprocess。因为我们的数据分为train和test集，
+    所以实际上我们只需要test集的blk_id，不过为了实验效果，我们将train和test的blk_id都提取出来
+    '''
+    blk_id_train=[]
+    for i in x_train:
+        blk_id_train.append(i[-1])
+        i.pop()
+
+    blk_id_test=[]
+    for j in x_test:
+        blk_id_test.append(j[-1])
+        j.pop()
+    print('x_train',x_train)
+    print('blk_id_train',blk_id_train)
+    print('x_test', x_test)
+    print('blk_id_test', blk_id_test)
+
+
+    return (x_train, y_train), (x_test, y_test),(blk_id_train,blk_id_test)
 
 
