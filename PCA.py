@@ -70,7 +70,7 @@ class PCA(object):
                                                1.0 / h0)
         print('SPE threshold: {}\n'.format(self.threshold))
 
-    def predict(self, X):
+    def predict(self, X,blk_id):
         assert self.proj_C is not None, 'PCA model needs to be trained before prediction.'
         y_pred = np.zeros(X.shape[0])
         for i in range(X.shape[0]):
@@ -78,11 +78,12 @@ class PCA(object):
             SPE = np.dot(y_a, y_a)
             if SPE > self.threshold:
                 y_pred[i] = 1
+            print(blk_id[i],'anomaly blockid')
         return y_pred
 
-    def evaluate(self, X, y_true):
+    def evaluate(self, X, y_true,blk_id):
         print('====== Evaluation summary ======')
-        y_pred = self.predict(X)
+        y_pred = self.predict(X,blk_id)
         precision = precision_score(y_true, y_pred)
         recall = recall_score(y_true, y_pred)
         f1 = f1_score(y_true, y_pred)
